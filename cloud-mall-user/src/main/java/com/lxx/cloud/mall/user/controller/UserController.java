@@ -1,15 +1,16 @@
 package com.lxx.cloud.mall.user.controller;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.lxx.mall.common.ApiRestResponse;
-import com.lxx.mall.common.Constant;
-import com.lxx.mall.exception.LxxMallException;
-import com.lxx.mall.exception.LxxMallExceptionEnum;
-import com.lxx.mall.model.pojo.User;
-import com.lxx.mall.service.EmailService;
-import com.lxx.mall.service.UserService;
-import com.lxx.mall.util.EmailUtil;
+
+
+import com.lxx.cloud.mall.common.ApiRestResponse;
+import com.lxx.cloud.mall.common.Constant;
+import com.lxx.cloud.mall.exception.LxxMallException;
+
+import com.lxx.cloud.mall.exception.LxxMallExceptionEnum;
+
+import com.lxx.cloud.mall.user.model.pojo.User;
+
+import com.lxx.cloud.mall.user.service.UserService;
 import com.mysql.cj.util.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -19,7 +20,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpSession;
-import java.util.Date;
 
 /**
  * @author 林修贤
@@ -32,14 +32,6 @@ public class UserController {
     @Autowired
     UserService userService;
 
-    @Autowired
-    EmailService emailService;
-    @GetMapping("/test")
-    @ResponseBody
-    public User personalPage() {
-        return userService.getUser();
-    }
-
     /**
      * 注册
      * @param userName
@@ -49,7 +41,7 @@ public class UserController {
      */
     @PostMapping("/register")
     @ResponseBody
-    public ApiRestResponse register(@RequestParam("userName") String userName, @RequestParam("password") String password, @RequestParam("emailAddress") String emailAddress, @RequestParam("verificationCode") String verificationCode) throws LxxMallException {
+    public ApiRestResponse register(@RequestParam("userName") String userName, @RequestParam("password") String password) throws LxxMallException {
         if (StringUtils.isNullOrEmpty(userName)) {
             return ApiRestResponse.error(LxxMallExceptionEnum.NEED_USER_NAME);
         }
@@ -60,22 +52,7 @@ public class UserController {
         if (password.length() < 8) {
             return ApiRestResponse.error(LxxMallExceptionEnum.PASSWORD_TOO_SHORT);
         }
-        if (StringUtils.isNullOrEmpty(emailAddress)) {
-            return ApiRestResponse.error(LxxMallExceptionEnum.NEED_EMAIL_ADDRESS);
-        }
-        if (StringUtils.isNullOrEmpty(verificationCode)) {
-            return ApiRestResponse.error(LxxMallExceptionEnum.NEED_VERIFICATION_CODE);
-        }
-        //检查邮件地址是否注册
-        boolean emailPass = userService.checkEmailRegistered(emailAddress);
-        if (!emailPass) {
-            return ApiRestResponse.error(LxxMallExceptionEnum.EMAIL_ALREADY_BEEN_REGISTERED);
-        }
-        Boolean passEmailAndCode = emailService.checkEmailAndCode(emailAddress, verificationCode);
-        if(!passEmailAndCode){
-            return ApiRestResponse.error(LxxMallExceptionEnum.WRONG_VERIFICATION_CODE);
-        }
-        userService.register(userName, password, emailAddress);
+        userService.register(userName, password);
         return ApiRestResponse.success();
     }
 
@@ -164,51 +141,6 @@ public class UserController {
         } else {
             return ApiRestResponse.error(LxxMallExceptionEnum.NEED_ADMIN);
         }
-    }
 
-    @PostMapping("/user/sendEmail")
-    @ResponseBody
-    public ApiRestResponse sendEmail(@RequestParam("emailAddress") String emailAddress){
-        //检查邮件地址是否有效， 检查是否注册
-        boolean validEmailAddress = EmailUtil.isValidEmailAddress(emailAddress);
-        if (validEmailAddress) {
-            boolean emailPass = userService.checkEmailRegistered(emailAddress);
-            if (!emailPass){
-                return ApiRestResponse.error(LxxMallExceptionEnum.EMAIL_ALREADY_BEEN_REGISTERED);
-            } else {
-                String verificationCode = EmailUtil.genVerificationCode();
-                boolean result = emailService.savaEmailToRedis(emailAddress, verificationCode);
-                if (result){
-                    emailService.sendSimpleMessage(emailAddress, Constant.EMAIL_SUBJECT, "欢迎注册，您的验证码是: " + verificationCode);
-                    return ApiRestResponse.success();
-                } else {
-                    return ApiRestResponse.error(LxxMallExceptionEnum.EMAIL_ALREADY_BEEN_SEND);
-                }
-            }
-        } else {
-            return ApiRestResponse.error(LxxMallExceptionEnum.WRONG_EMAIL);
-        }
-    }
-
-    @GetMapping("/loginWithJWT")
-    @ResponseBody
-    public ApiRestResponse loginWithJWT(@RequestParam("userName") String userName, @RequestParam("password") String password){
-        if (StringUtils.isNullOrEmpty(userName)) {
-            return ApiRestResponse.error(LxxMallExceptionEnum.NEED_USER_NAME);
-        }
-        if (StringUtils.isNullOrEmpty(password)) {
-            return ApiRestResponse.error(LxxMallExceptionEnum.NEED_PASSWORD);
-        }
-        User user = userService.login(userName, password);
-        //保存用户信息时不保存密码
-        user.setPassword(null);
-        Algorithm algorithm = Algorithm.HMAC256(Constant.JWT_KEY);
-        String token = JWT.create()
-                .withClaim(Constant.USER_NAME, user.getUsername())
-                .withClaim(Constant.USER_ID, user.getId())
-                .withClaim(Constant.USER_ROLE, user.getRole())
-                .withExpiresAt(new Date(System.currentTimeMillis() + Constant.EXPIRE_TIME))
-                .sign(algorithm);
-        return ApiRestResponse.success(token);
     }
 }
