@@ -14,10 +14,7 @@ import com.lxx.cloud.mall.user.service.UserService;
 import com.mysql.cj.util.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpSession;
 
@@ -141,6 +138,16 @@ public class UserController {
         } else {
             return ApiRestResponse.error(LxxMallExceptionEnum.NEED_ADMIN);
         }
+    }
 
+    /**
+     * 校验是否是管理员
+     * @param user
+     * @return
+     */
+    @PostMapping("/checkAdminRole")
+    @ResponseBody
+    public Boolean checkAdminRole(@RequestBody User user){
+        return userService.checkAdminRole(user);
     }
 }
