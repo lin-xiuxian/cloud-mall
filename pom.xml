@@ -12,6 +12,7 @@
         <module>cloud-mall-eureka-server</module>
         <module>cloud-mall-user</module>
         <module>cloud-mall-common</module>
+        <module>could-mall-zuul</module>
     </modules>
 
     <parent>
