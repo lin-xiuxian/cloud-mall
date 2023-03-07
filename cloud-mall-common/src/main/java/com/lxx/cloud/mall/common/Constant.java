@@ -24,13 +24,6 @@ public class Constant {
     public static final Float IMAGE_OPACITY = 0.5f;
     public static final String WATER_MARK_JPG = "watermark.jpg";
 
-    public static String FILE_UPLOAD_DIR;
-
-    @Value("${file.upload.dir}")
-    public void setFileUploadDir(String fileUploadDir) {
-        FILE_UPLOAD_DIR = fileUploadDir;
-    }
-
     public interface ProductListOrderBy {
         Set<String> PRICE_ASC_DESC = Sets.newHashSet("price desc", "price asc");
 
