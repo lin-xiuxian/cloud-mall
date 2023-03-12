@@ -150,4 +150,22 @@ public class UserController {
     public Boolean checkAdminRole(@RequestBody User user){
         return userService.checkAdminRole(user);
     }
+
+
+    /**
+     * 获取当前用户的 User 对象
+     * @param session
+     * @return
+     */
+    @GetMapping("/getUser")
+    @ResponseBody
+    public User getUser(HttpSession session){
+        User currentUser = (User) session.getAttribute(Constant.LXX_MALL_USER);
+        return currentUser;
+    }
+
+    @PostMapping("/checkAdminRoleForFeign")
+    public Boolean checkAdminRoleForFeign(User user){
+        return userService.checkAdminRole(user);
+    }
 }

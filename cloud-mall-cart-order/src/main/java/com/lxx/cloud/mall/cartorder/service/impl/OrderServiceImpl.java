@@ -2,7 +2,9 @@ package com.lxx.cloud.mall.cartorder.service.impl;
 
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.google.zxing.WriterException;
 import com.lxx.cloud.mall.cartorder.feign.ProductFeignClient;
+import com.lxx.cloud.mall.cartorder.feign.UserFeignClient;
 import com.lxx.cloud.mall.cartorder.model.dao.CartMapper;
 import com.lxx.cloud.mall.cartorder.model.dao.OrderItemMapper;
 import com.lxx.cloud.mall.cartorder.model.dao.OrderMapper;
@@ -59,8 +61,11 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     OrderItemMapper orderItemMapper;
 
+    @Value("${file.upload.dir}")
+    String fileUploadDir;
+
     @Autowired
-    UserService userService;
+    UserFeignClient userFeignClient;
     @Value("${file.upload.ip}")
     String ip;
     //数据库事务
@@ -68,7 +73,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public String create(CreateOrderReq createOrderReq){
         //拿到用户ID
-        Integer userId = UserFilter.currentUser.getId();
+        Integer userId = userFeignClient.getUser().getId();
         //从购物车查找已勾选的商品
         List<CartVO> cartVOList = cartService.list(userId);
         ArrayList<CartVO> cartVOListTemp = new ArrayList<>();
@@ -90,13 +95,13 @@ public class OrderServiceImpl implements OrderService {
         //扣库存
         for (int i = 0; i < orderItemList.size(); i++) {
             OrderItem orderItem = orderItemList.get(i);
-            Product product = productFeignClient.selectByPrimaryKey(orderItem.getProductId());
+            Product product = productFeignClient.detailForFeign(orderItem.getProductId());
             int stock = product.getStock() - orderItem.getQuantity();
             if(stock < 0){
                 throw new LxxMallException(LxxMallExceptionEnum.NOT_ENOUGH);
             }
             product.setStock(stock);
-            productFeignClient.updateByPrimaryKeySelective(product);
+//            productFeignClient.updateByPrimaryKeySelective(product);
         }
         //把购物车中已勾选的商品删除
         cleanCart(cartVOList);
@@ -161,7 +166,7 @@ public class OrderServiceImpl implements OrderService {
     private void validSaleStatusAndStock(List<CartVO> cartVOList) {
         for (int i = 0; i < cartVOList.size(); i++) {
             CartVO cartVO = cartVOList.get(i);
-            Product product = productFeignClient.selectByPrimaryKey(cartVO.getProductId());
+            Product product = productFeignClient.detailForFeign(cartVO.getProductId());
             //判断商品是否存在,是否上架
             if (product == null || product.getStatus().equals(Constant.SaleStatus.NOT_SALE)){
                 throw new LxxMallException(LxxMallExceptionEnum.NOT_SALE);
@@ -182,7 +187,7 @@ public class OrderServiceImpl implements OrderService {
             throw new LxxMallException(LxxMallExceptionEnum.NO_ORDER);
         }
         //订单存在，判断所属
-        Integer userId = UserFilter.currentUser.getId();
+        Integer userId = userFeignClient.getUser().getId();
         if(!order.getUserId().equals(userId)){
             throw new LxxMallException(LxxMallExceptionEnum.NOT_YOUR_ORDER);
         }
@@ -210,7 +215,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public PageInfo listForCustomer(Integer pageNum, Integer pageSize){
-        Integer userId = UserFilter.currentUser.getId();
+        Integer userId = userFeignClient.getUser().getId();
         PageHelper.startPage(pageNum, pageSize);
         List<Order> orderList = orderMapper.selectForCustomer(userId);
         List<OrderVO> orderVOList = orderListToOrderVOList(orderList);
@@ -237,7 +242,7 @@ public class OrderServiceImpl implements OrderService {
             throw new LxxMallException(LxxMallExceptionEnum.NO_ORDER);
         }
         //订单存在，判断所属
-        Integer userId = UserFilter.currentUser.getId();
+        Integer userId = userFeignClient.getUser().getId();
         if(!order.getUserId().equals(userId)){
             throw new LxxMallException(LxxMallExceptionEnum.NOT_YOUR_ORDER);
         }
@@ -258,7 +263,7 @@ public class OrderServiceImpl implements OrderService {
         String address = ip + ":" + request.getLocalPort();
         String payUrl = "http://" + address + "/pay?orderNo=" + orderNo;
         try {
-            QRCodeGenerator.generateQRCodeImage(payUrl, 350, 350, Constant.FILE_UPLOAD_DIR + orderNo + ".png");
+            QRCodeGenerator.generateQRCodeImage(payUrl, 350, 350, fileUploadDir + orderNo + ".png");
         } catch (WriterException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -319,7 +324,7 @@ public class OrderServiceImpl implements OrderService {
             throw new LxxMallException(LxxMallExceptionEnum.NO_ORDER);
         }
         //普通用户校验订单所属
-        if (!userService.checkAdminRole(UserFilter.currentUser) && !order.getUserId().equals(UserFilter.currentUser.getId())) {
+        if (!userFeignClient.checkAdminRole(userFeignClient.getUser()) && !order.getUserId().equals(userFeignClient.getUser().getId())) {
             throw new LxxMallException(LxxMallExceptionEnum.NOT_YOUR_ORDER);
         }
         //发货后可以完结订单

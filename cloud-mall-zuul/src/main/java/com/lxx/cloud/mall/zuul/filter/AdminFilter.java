@@ -43,9 +43,6 @@ public class AdminFilter extends ZuulFilter {
         if (requestURI.contains("admin")){
             return true;
         }
-        if (requestURI.contains("cart") || requestURI.contains("order")){
-            return true;
-        }
         return false;
     }
 

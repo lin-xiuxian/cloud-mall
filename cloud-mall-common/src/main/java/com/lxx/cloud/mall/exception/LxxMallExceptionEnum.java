@@ -21,6 +21,12 @@ public enum LxxMallExceptionEnum {
     DELETE_FAILED(10013, "删除失败"),
     MKDIR_FAILED(10014, "创建文件夹失败"),
     UPLOAD_FAILED(10015, "上传失败"),
+    NOT_SALE(10016, "商品未上架"),
+    NOT_ENOUGH(10017, "商品库存不足"),
+    CART_EMPTY(10018, "购物车为空"),
+    NO_ORDER(10019, "订单为空"),
+    NOT_YOUR_ORDER(10020, "订单越权"),
+    WRONG_ORDER_STATUS(10021, "订单状态错误"),
     SYSTEM_ERROR(20000, "系统异常");
     /**
      * 异常码

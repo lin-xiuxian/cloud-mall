@@ -35,7 +35,7 @@ public class UserFilter extends ZuulFilter {
         if(requestURI.contains("images") || requestURI.contains("pay")){
             return false;
         }
-        if(requestURI.contains("cart") || requestURI.contains("order")){
+        if(requestURI.contains("cart") || requestURI.contains("order") || requestURI.contains("getUser")){
             return true;
         }
         return false;
