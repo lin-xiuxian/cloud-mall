@@ -43,4 +43,8 @@ public class ProductController {
         return product;
     }
 
+    @PostMapping("/product/updateStock")
+    public void updateStock(@RequestParam Integer productId, @RequestParam Integer stock){
+        productService.updateStock(productId, stock);
+    }
 }

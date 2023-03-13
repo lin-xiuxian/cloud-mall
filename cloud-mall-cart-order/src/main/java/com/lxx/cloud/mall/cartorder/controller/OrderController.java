@@ -5,6 +5,7 @@ import com.lxx.cloud.mall.cartorder.model.request.CreateOrderReq;
 import com.lxx.cloud.mall.cartorder.model.vo.OrderVO;
 import com.lxx.cloud.mall.cartorder.service.OrderService;
 import com.lxx.cloud.mall.common.ApiRestResponse;
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -47,6 +48,13 @@ public class OrderController {
     public ApiRestResponse cancel(@RequestParam String orderNo){
         orderService.cancel(orderNo);
         return ApiRestResponse.success();
+    }
+
+    @PostMapping("/qrcode")
+    @ApiOperation("二维码接口")
+    public ApiRestResponse qrcode(@RequestParam String orderNo){
+        String uri = orderService.qrcode(orderNo);
+        return ApiRestResponse.success(uri);
     }
 
     @PostMapping("/pay")

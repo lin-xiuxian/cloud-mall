@@ -16,12 +16,12 @@ import com.lxx.cloud.mall.cartorder.model.vo.OrderItemVO;
 import com.lxx.cloud.mall.cartorder.model.vo.OrderVO;
 import com.lxx.cloud.mall.cartorder.service.CartService;
 import com.lxx.cloud.mall.cartorder.service.OrderService;
+import com.lxx.cloud.mall.cartorder.utils.OrderCodeFactory;
+import com.lxx.cloud.mall.categoryproduct.common.ProductConstant;
 import com.lxx.cloud.mall.categoryproduct.model.pojo.Product;
 import com.lxx.cloud.mall.common.Constant;
 import com.lxx.cloud.mall.exception.LxxMallException;
 import com.lxx.cloud.mall.exception.LxxMallExceptionEnum;
-import com.lxx.cloud.mall.user.service.UserService;
-import com.lxx.cloud.mall.utils.OrderCodeFactory;
 import com.lxx.cloud.mall.utils.QRCodeGenerator;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,13 +61,17 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     OrderItemMapper orderItemMapper;
 
-    @Value("${file.upload.dir}")
-    String fileUploadDir;
-
     @Autowired
     UserFeignClient userFeignClient;
+
     @Value("${file.upload.ip}")
     String ip;
+
+    @Value("${file.upload.port}")
+    String port;
+
+    @Value("${file.upload.dir}")
+    String FILE_UPLOAD_DIR;
     //数据库事务
     @Transactional(rollbackFor = Exception.class)
     @Override
@@ -100,8 +104,7 @@ public class OrderServiceImpl implements OrderService {
             if(stock < 0){
                 throw new LxxMallException(LxxMallExceptionEnum.NOT_ENOUGH);
             }
-            product.setStock(stock);
-//            productFeignClient.updateByPrimaryKeySelective(product);
+            productFeignClient.updateStock(product.getId(), stock);
         }
         //把购物车中已勾选的商品删除
         cleanCart(cartVOList);
@@ -260,17 +263,17 @@ public class OrderServiceImpl implements OrderService {
         ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         HttpServletRequest request = attributes.getRequest();
 
-        String address = ip + ":" + request.getLocalPort();
-        String payUrl = "http://" + address + "/pay?orderNo=" + orderNo;
+        String address = ip + ":" + port;
+        String payUrl = "http://" + address + "/cart-order/pay?orderNo=" + orderNo;
         try {
-            QRCodeGenerator.generateQRCodeImage(payUrl, 350, 350, fileUploadDir + orderNo + ".png");
+            QRCodeGenerator.generateQRCodeImage(payUrl, 350, 350, FILE_UPLOAD_DIR + orderNo + ".png");
         } catch (WriterException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        String pngAddress = "http://" + address + "/images/" + orderNo + ".png";
+        String pngAddress = "http://" + address + "/cart-order/images/" + orderNo + ".png";
         return pngAddress;
     }
 
@@ -324,7 +327,7 @@ public class OrderServiceImpl implements OrderService {
             throw new LxxMallException(LxxMallExceptionEnum.NO_ORDER);
         }
         //普通用户校验订单所属
-        if (!userFeignClient.checkAdminRole(userFeignClient.getUser()) && !order.getUserId().equals(userFeignClient.getUser().getId())) {
+        if (userFeignClient.getUser().getRole().equals(1) && !order.getUserId().equals(userFeignClient.getUser().getId())) {
             throw new LxxMallException(LxxMallExceptionEnum.NOT_YOUR_ORDER);
         }
         //发货后可以完结订单

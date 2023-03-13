@@ -17,7 +17,4 @@ public interface UserFeignClient {
      */
     @GetMapping("/getUser")
     User getUser();
-
-    @GetMapping("/checkAdminRoleForFeign")
-    Boolean checkAdminRole(User user);
 }
