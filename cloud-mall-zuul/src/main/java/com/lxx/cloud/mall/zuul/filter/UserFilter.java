@@ -7,6 +7,7 @@ import com.netflix.zuul.ZuulFilter;
 import com.netflix.zuul.context.RequestContext;
 import com.netflix.zuul.exception.ZuulException;
 import org.springframework.cloud.netflix.zuul.filters.support.FilterConstants;
+import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -16,6 +17,7 @@ import javax.servlet.http.HttpSession;
  * @date 2023/3/4
  * @description 用户鉴权过滤器
  */
+@Component
 public class UserFilter extends ZuulFilter {
     @Override
     public String filterType() {
