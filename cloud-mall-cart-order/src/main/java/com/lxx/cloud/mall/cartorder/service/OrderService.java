@@ -1,8 +1,11 @@
 package com.lxx.cloud.mall.cartorder.service;
 
 import com.github.pagehelper.PageInfo;
+import com.lxx.cloud.mall.cartorder.model.pojo.Order;
 import com.lxx.cloud.mall.cartorder.model.request.CreateOrderReq;
 import com.lxx.cloud.mall.cartorder.model.vo.OrderVO;
+
+import java.util.List;
 
 /**
  * @author 林修贤
@@ -16,7 +19,7 @@ public interface OrderService {
 
     PageInfo listForCustomer(Integer pageNum, Integer pageSize);
 
-    void cancel(String orderNo);
+    void cancel(String orderNo, Boolean isFromSystem);
 
     String qrcode(String orderNo);
 
@@ -27,4 +30,6 @@ public interface OrderService {
     void deliver(String orderNo);
 
     void finish(String orderNo);
+
+    List<Order> getUnpaidOrder();
 }

@@ -17,12 +17,12 @@ import com.lxx.cloud.mall.cartorder.model.vo.OrderVO;
 import com.lxx.cloud.mall.cartorder.service.CartService;
 import com.lxx.cloud.mall.cartorder.service.OrderService;
 import com.lxx.cloud.mall.cartorder.utils.OrderCodeFactory;
-import com.lxx.cloud.mall.categoryproduct.common.ProductConstant;
 import com.lxx.cloud.mall.categoryproduct.model.pojo.Product;
 import com.lxx.cloud.mall.common.Constant;
 import com.lxx.cloud.mall.exception.LxxMallException;
 import com.lxx.cloud.mall.exception.LxxMallExceptionEnum;
 import com.lxx.cloud.mall.utils.QRCodeGenerator;
+import org.apache.commons.lang.time.DateUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -238,16 +238,18 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public void cancel(String orderNo){
+    public void cancel(String orderNo, Boolean isFromSystem){
         Order order = orderMapper.selectByOrderNo(orderNo);
         //查不到订单报错
         if(order == null){
             throw new LxxMallException(LxxMallExceptionEnum.NO_ORDER);
         }
         //订单存在，判断所属
-        Integer userId = userFeignClient.getUser().getId();
-        if(!order.getUserId().equals(userId)){
-            throw new LxxMallException(LxxMallExceptionEnum.NOT_YOUR_ORDER);
+        if (!isFromSystem) {
+            Integer userId = userFeignClient.getUser().getId();
+            if(!order.getUserId().equals(userId)){
+                throw new LxxMallException(LxxMallExceptionEnum.NOT_YOUR_ORDER);
+            }
         }
         if(order.getOrderStatus().equals(Constant.OrderStatusEnum.NOT_PAID.getCode())){
             order.setOrderStatus(Constant.OrderStatusEnum.CANCELED.getCode());
@@ -339,4 +341,14 @@ public class OrderServiceImpl implements OrderService {
             throw new LxxMallException(LxxMallExceptionEnum.WRONG_ORDER_STATUS);
         }
     }
+
+    @Override
+    public List<Order> getUnpaidOrder() {
+        Date curTime = new Date();
+        Date endTime = DateUtils.addDays(curTime, -1);
+        Date begTime = DateUtils.addMinutes(endTime, -5);
+        List<Order> unpaidOrders = orderMapper.selectUnpaidOrders(begTime, endTime);
+        return unpaidOrders;
+    }
+
 }

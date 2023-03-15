@@ -1,8 +1,10 @@
 package com.lxx.cloud.mall.cartorder.model.dao;
 
 import com.lxx.cloud.mall.cartorder.model.pojo.Order;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Date;
 import java.util.List;
 
 @Repository
@@ -24,4 +26,6 @@ public interface OrderMapper {
     List<Order> selectForCustomer(Integer userId);
 
     List<Order> selectAllForAdmin();
+
+    List<Order> selectUnpaidOrders(@Param("begTime") Date begTime, @Param("endTime") Date endTime);
 }
