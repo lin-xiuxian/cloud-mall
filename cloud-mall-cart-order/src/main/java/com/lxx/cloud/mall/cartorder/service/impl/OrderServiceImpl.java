@@ -14,6 +14,7 @@ import com.lxx.cloud.mall.cartorder.model.request.CreateOrderReq;
 import com.lxx.cloud.mall.cartorder.model.vo.CartVO;
 import com.lxx.cloud.mall.cartorder.model.vo.OrderItemVO;
 import com.lxx.cloud.mall.cartorder.model.vo.OrderVO;
+import com.lxx.cloud.mall.cartorder.mq.MsgSender;
 import com.lxx.cloud.mall.cartorder.service.CartService;
 import com.lxx.cloud.mall.cartorder.service.OrderService;
 import com.lxx.cloud.mall.cartorder.utils.OrderCodeFactory;
@@ -64,6 +65,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     UserFeignClient userFeignClient;
+
+    @Autowired
+    MsgSender msgSender;
 
     @Value("${file.upload.ip}")
     String ip;
@@ -269,7 +273,8 @@ public class OrderServiceImpl implements OrderService {
             OrderItem orderItem = orderItemList.get(i);
             Product product = productFeignClient.detailForFeign(orderItem.getProductId());
             int stock = product.getStock() + orderItem.getQuantity();
-            productFeignClient.updateStock(orderItem.getProductId(), stock);
+//            productFeignClient.updateStock(orderItem.getProductId(), stock);
+            msgSender.send(product.getId(), stock);
         }
     }
 
