@@ -237,7 +237,7 @@
     select
     <include refid="Base_Column_List"/>
     from imooc_mall_order where
-    create_time between #{begTime} and #{curTime}
+    create_time between #{begTime} and #{endTime}
     and order_status = 10
   </select>
 </mapper>

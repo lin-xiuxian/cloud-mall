@@ -22,6 +22,7 @@ import com.lxx.cloud.mall.common.Constant;
 import com.lxx.cloud.mall.exception.LxxMallException;
 import com.lxx.cloud.mall.exception.LxxMallExceptionEnum;
 import com.lxx.cloud.mall.utils.QRCodeGenerator;
+import io.seata.spring.annotation.GlobalTransactional;
 import org.apache.commons.lang.time.DateUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,7 +74,8 @@ public class OrderServiceImpl implements OrderService {
     @Value("${file.upload.dir}")
     String FILE_UPLOAD_DIR;
     //数据库事务
-    @Transactional(rollbackFor = Exception.class)
+//    @Transactional(rollbackFor = Exception.class)
+    @GlobalTransactional
     @Override
     public String create(CreateOrderReq createOrderReq){
         //拿到用户ID
@@ -109,6 +111,7 @@ public class OrderServiceImpl implements OrderService {
         //把购物车中已勾选的商品删除
         cleanCart(cartVOList);
         //生成订单
+
         Order order = new Order();
         //生成订单号， 独立规则
         String orderNo = OrderCodeFactory.getOrderCode(Long.valueOf(userId));
@@ -257,6 +260,16 @@ public class OrderServiceImpl implements OrderService {
             orderMapper.updateByPrimaryKeySelective(order);
         } else {
             throw new LxxMallException(LxxMallExceptionEnum.WRONG_ORDER_STATUS);
+        }
+
+        //恢复商品库存
+        //获取订单对应的 orderItemList
+        List<OrderItem> orderItemList = orderItemMapper.selectByOrderNo(order.getOrderNo());
+        for (int i = 0; i < orderItemList.size(); i++) {
+            OrderItem orderItem = orderItemList.get(i);
+            Product product = productFeignClient.detailForFeign(orderItem.getProductId());
+            int stock = product.getStock() + orderItem.getQuantity();
+            productFeignClient.updateStock(orderItem.getProductId(), stock);
         }
     }
 
