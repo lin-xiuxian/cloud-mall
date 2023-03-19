@@ -273,8 +273,8 @@ public class OrderServiceImpl implements OrderService {
             OrderItem orderItem = orderItemList.get(i);
             Product product = productFeignClient.detailForFeign(orderItem.getProductId());
             int stock = product.getStock() + orderItem.getQuantity();
-//            productFeignClient.updateStock(orderItem.getProductId(), stock);
-            msgSender.send(product.getId(), stock);
+            productFeignClient.updateStock(orderItem.getProductId(), stock);
+//            msgSender.send(product.getId(), stock);
         }
     }
 
