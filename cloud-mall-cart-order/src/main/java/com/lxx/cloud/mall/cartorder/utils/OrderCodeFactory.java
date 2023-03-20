@@ -11,8 +11,14 @@ import java.util.Random;
  * @description 生成订单号工具
  */
 public class OrderCodeFactory {
+    public static ThreadLocal<SimpleDateFormat> simpleDateFormatThreadLocal = new ThreadLocal<SimpleDateFormat>(){
+        @Override
+        protected SimpleDateFormat initialValue() {
+            return new SimpleDateFormat("yyyyMMddHHmmss");
+        }
+    };
     private static String getDateTime(){
-        DateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
+        DateFormat sdf = simpleDateFormatThreadLocal.get();
         return sdf.format(new Date());
     }
 
